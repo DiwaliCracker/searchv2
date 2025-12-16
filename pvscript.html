@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Search Results</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #0f0f0f;
+      color: #fff;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .posters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .poster-wrapper {
+      flex: 1 1 calc(33.333% - 40px);
+      max-width: calc(33.333% - 40px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    @media (max-width: 1024px) {
+      .poster-wrapper {
+        flex: 1 1 calc(50% - 30px);
+        max-width: calc(50% - 30px);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .poster-wrapper {
+        flex: 1 1 100%;
+        max-width: 100%;
+      }
+    }
+
+    .poster-wrapper a {
+      width: 100%;
+      position: relative;
+      border-radius: 5px;
+      overflow: hidden;
+      text-decoration: none;
+      display: block;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .poster-wrapper a img {
+      width: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .overlay video,
+    .overlay iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+    }
+
+    .poster-wrapper a:hover .overlay video,
+    .poster-wrapper a:hover .overlay iframe {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .overlay2 {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 0 0 10px 10px;
+    }
+
+    .overlay2 h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .actor-list {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.5s ease, opacity 0.5s ease;
+      font-size: 14px;
+      color: #ccc;
+      text-align: center;
+      margin-top: 5px;
+      width: 100%;
+      line-height: 1.4;
+    }
+
+    .poster-wrapper:hover .actor-list {
+      max-height: 100px;
+      opacity: 1;
+    }
+
+    .actor-list a {
+      color: #ccc;
+      text-decoration: none;
+      margin: 0 5px;
+      word-break: break-word;
+    }
+
+    .actor-list a:hover {
+      text-decoration: underline;
+    }
+
+    .sort-options {
+      text-align: center;
+      margin: 20px 0;
+    }
+    #sortSelect {
+      padding: 6px 12px;
+      font-size: 16px;
+      border-radius: 6px;
+      background: #141e30;
+      color: #fff;
+      border: 1px solid #555;
+      transition: all 0.3s ease;
+    }
+    #sortSelect:hover {
+      background: #243b55;
+      color: #ffcc00;
+    }
+
+    /* --- added: time badge (bottom-right) --- */
+    .time-badge {
+      color: #fff;
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      z-index: 3;
+      background: rgba(0,0,0,0.6);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1;
+      letter-spacing: 0.3px;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      pointer-events: none;
+      backdrop-filter: blur(2px);
+    }
+    .poster-wrapper a:hover .time-badge {
+      background: rgba(0,0,0,0.7);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    /* --- added: quality badges (top-left, multiple) --- */
+    .quality-badges {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      z-index: 3;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      pointer-events: none;
+    }
+    .quality-badge {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.3px;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      white-space: nowrap;
+    }
+    .poster-wrapper a:hover .quality-badges {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    /* variants (customize freely) */
+    .quality-default { background: rgba(0,0,0,0.55); color: #fff; }
+    .quality-FHD     { background: linear-gradient(135deg, #0072ff, #00c6ff); color: #fff; }
+    .quality-HD      { background: linear-gradient(135deg, #026f75, #00eaff); color: #fff; }
+    .quality-1080p   { background: linear-gradient(135deg, #1fa84f, #5cd65c); color: #fff; }
+    .quality-720p    { background: linear-gradient(135deg, #ff9800, #ffc107); color: #111; }
+    .quality-PXLD    { background: linear-gradient(135deg, #017a2d, #02e74b); color: #fff; }
+    .quality-VEPRN   { background: linear-gradient(135deg, #029d05, #0af202); color: #fff; }
+    .quality-4K      { background: linear-gradient(135deg, #8e2de2, #4a00e0); color: #fff; }
+    .quality-8K      { background: linear-gradient(135deg, #ff512f, #dd2476); color: #fff; }
+    .quality-TLGRM   { background: linear-gradient(135deg, #2401a2, #3601f6); color: #fff; }
+    .quality-SUJNU   { background: linear-gradient(135deg, #0d0d0d, #232323); color: #fff; }
+    .quality-CYBRFILE{ background: linear-gradient(135deg, #090528, #1e00ff); color: #fff; }
+    .quality-SOUL    { background: linear-gradient(135deg, #4a4a4a, #a9a3a3); color: #fff; }
+    .quality-BUNKR   { background: linear-gradient(135deg, #382f55, #A78BFA); color: #fff; }
+    .quality-320p    { background: linear-gradient(135deg, #175001, #20d803); color: #fff; }
+    .quality-EMBED   { background: linear-gradient(135deg, #3e3901, #ebfb00); color: #fff; }
+  </style>
+</head>
+<body>
+
+<h1>Search Results</h1>
+<div class="sort-options">
+  <select id="sortSelect">
+    <option value="default">Default</option>
+    <option value="recent">Recent</option>
+    <option value="old">Old</option>
+    <option value="long">Long</option>
+    <option value="short">Short</option>
+    <option value="popular">Popular</option>
+    <option value="random">Random</option>
+  </select>
+</div>
+
+<div class="posters" id="results-container"></div>
+
+<script>
+const query = new URLSearchParams(window.location.search).get("q")?.toLowerCase() || "";
+const pages = [
+  "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pkk2.html", "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pvv.html", "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pil.html", "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pjs.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/psr.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pmm1.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/prf.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pdd1.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pabp.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pjr.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pam.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/plp.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/phr.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pkrrisyl.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pis.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pkk.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pej.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pxxlm.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pec.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pew.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/paja.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pcp.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/prs.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pjk.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pkt.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pjj.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pjl.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pek.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pkaylak.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pbb.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pls69.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pcg.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/paa.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pkalir.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pkj.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/ps.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pac2.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/ppb.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/psv.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pll.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pkv.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/psd.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/psb.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pbd.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pgd.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/pkylier.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/paf.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pvb.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pdv.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/psr.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/psd.html",
+   "https://raw.githubusercontent.com/DiwaliCracker/vtt1/main/psm.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pkg.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pkrissyl.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pam.html",
+   "https://file.garden/aG0M3eyoAi7HijUP/P/html/pcc.html",
+   "https://files.catbox.moe/jr759s.html"
+,]; // You can keep adding more HTML files here
+const resultsContainer = document.getElementById("results-container");
+
+async function fetchAndExtractSections(pageUrl) {
+  try {
+    const res = await fetch(pageUrl);
+    const text = await res.text();
+    const match = text.match(/const sections\s*=\s*(\[[\s\S]*?\]);/);
+    if (match && match[1]) {
+      const json = new Function("return " + match[1])();
+      return json;
+    }
+  } catch (e) {
+    console.error("Failed to load", pageUrl, e);
+  }
+  return [];
+}
+
+/* --- added: helpers to parse date/time for sorting --- */
+function parseDateValue(str) {
+  if (!str || typeof str !== "string") return NaN;
+  // Support DD/MM/YYYY (primary)
+  const m = str.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    const d = parseInt(m[1], 10);
+    const mo = parseInt(m[2], 10) - 1;
+    const y = parseInt(m[3], 10);
+    const t = new Date(y, mo, d).getTime();
+    return isNaN(t) ? NaN : t;
+  }
+  // Fallback: Date.parse if another valid format sneaks in
+  const t = Date.parse(str);
+  return isNaN(t) ? NaN : t;
+}
+
+function parseDurationToSeconds(str) {
+  if (!str || typeof str !== "string") return NaN;
+  const parts = str.trim().split(":").map(p => parseInt(p, 10));
+  if (parts.some(isNaN)) return NaN;
+  // Accept H:MM:SS or MM:SS
+  if (parts.length === 3) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  } else if (parts.length === 2) {
+    return parts[0] * 60 + parts[1];
+  }
+  return NaN;
+}
+
+/* --- unchanged structure; only additions inside createPoster for time & badges --- */
+function createPoster(item) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "poster-wrapper";
+
+  const anchor = document.createElement("a");
+  anchor.href = item.link;
+  anchor.setAttribute("altname", item.altname);
+  anchor.style.position = "relative";
+
+  // (optional) keep for future use
+  if (item.date) anchor.dataset.date = item.date;
+  if (item.time) anchor.dataset.time = item.time;
+
+  const loadingBar = document.createElement("div");
+  loadingBar.style.position = "absolute";
+  loadingBar.style.top = "0";
+  loadingBar.style.left = "0";
+  loadingBar.style.height = "4px";
+  loadingBar.style.width = "0%";
+  loadingBar.style.background = "#00bcd4";
+  loadingBar.style.transition = "width 1s ease";
+  anchor.appendChild(loadingBar);
+
+  const img = document.createElement("img");
+  img.src = item.img;
+  img.alt = item.altname;
+  anchor.appendChild(img);
+
+  const overlay = document.createElement("div");
+  overlay.className = "overlay";
+
+  let videoElement = null;
+  let timeoutId = null;
+
+  anchor.addEventListener("mouseenter", () => {
+    loadingBar.style.width = "100%";
+    timeoutId = setTimeout(() => {
+      overlay.innerHTML = "";
+
+      if (item.video) {
+        videoElement = document.createElement("video");
+        videoElement.src = item.video;
+        videoElement.muted = true;
+        videoElement.loop = true;
+        videoElement.playsInline = true;
+        overlay.appendChild(videoElement);
+        videoElement.play();
+      } else if (item.iframe) {
+        const iframe = document.createElement("iframe");
+        iframe.src = item.iframe;
+        iframe.setAttribute("frameborder", "0");
+        iframe.setAttribute("allow", "autoplay");
+        overlay.appendChild(iframe);
+      }
+    }, 1000);
+  });
+
+  anchor.addEventListener("mouseleave", () => {
+    clearTimeout(timeoutId);
+    if (videoElement) {
+      videoElement.pause();
+      videoElement.src = "";
+      videoElement.load();
+      videoElement = null;
+    }
+    overlay.innerHTML = "";
+    loadingBar.style.width = "0%";
+  });
+
+  anchor.appendChild(overlay);
+
+  /* --- added: time badge (bottom-right) --- */
+  if (item.time) {
+    const timeBadge = document.createElement("div");
+    timeBadge.className = "time-badge";
+    timeBadge.textContent = item.time;
+    anchor.appendChild(timeBadge);
+  }
+
+  /* --- added: quality badges (top-left; support multiple via +) --- */
+  if (item.badge) {
+    const containerBadges = document.createElement("div");
+    containerBadges.className = "quality-badges";
+    const parts = String(item.badge).split(/\s*\+\s*/).filter(Boolean);
+
+    parts.forEach(part => {
+      const text = String(part).trim();
+      if (!text) return;
+      const b = document.createElement("div");
+      b.className = "quality-badge quality-default";
+      b.textContent = text;
+
+      const val = text.toUpperCase();
+      if (val === "FHD") b.classList.add("quality-FHD");
+       else if (val === "HD") b.classList.add("quality-HD");
+        else if (val === "1080P" || val === "1080") b.classList.add("quality-1080p");
+        else if (val === "720P" || val === "720") b.classList.add("quality-720p");
+        else if (val === "4K") b.classList.add("quality-4K");
+        else if (val === "8K") b.classList.add("quality-8K");
+        else if (val === "PD" || val === "PXLD") b.classList.add("quality-PXLD");
+        else if (val === "Veprn" || val === "VEPRN") b.classList.add("quality-VEPRN");
+        else if (val === "Telgrm" || val === "TLGRM") b.classList.add("quality-TLGRM");
+        else if (val === "cyberfile" || val === "CYBRFILE") b.classList.add("quality-CYBRFILE");
+        else if (val === "Soul" || val === "SOUL") b.classList.add("quality-SOUL");
+        else if (val === "Bunkr" || val === "BUNKR") b.classList.add("quality-BUNKR");
+        else if (val === "320p" || val === "320") b.classList.add("quality-320p");
+        else if (val === "EMBED" || val === "EMBEDDED") b.classList.add("quality-EMBED");
+      // else keep default
+
+      containerBadges.appendChild(b);
+    });
+
+    anchor.appendChild(containerBadges);
+  }
+
+  const overlay2 = document.createElement("div");
+  overlay2.className = "overlay2";
+  const name = document.createElement("h3");
+  name.textContent = item.name;
+  overlay2.appendChild(name);
+  anchor.appendChild(overlay2);
+
+  wrapper.appendChild(anchor);
+
+  if (item.actors?.length) {
+    const actorList = document.createElement("div");
+    actorList.className = "actor-list";
+    item.actors.forEach((actor, index) => {
+      const link = document.createElement("a");
+      link.href = actor.link;
+      link.target = "_blank";
+      link.textContent = actor.name;
+      actorList.appendChild(link);
+      if (index < item.actors.length - 1) {
+        actorList.appendChild(document.createTextNode(", "));
+      }
+    });
+    wrapper.appendChild(actorList);
+  }
+
+  resultsContainer.appendChild(wrapper);
+}
+
+(async () => {
+  const fetchPromises = pages.map(fetchAndExtractSections);
+  const allResults = await Promise.all(fetchPromises);
+
+  const flatItems = [];
+
+  allResults.flat().forEach(section => {
+    section.items.forEach(item => {
+      const combined = `${item.name} ${item.altname} ${item.actors?.map(a => a.name).join(" ")}`.toLowerCase();
+      if (combined.includes(query)) {
+        flatItems.push(item);
+      }
+    });
+  });
+
+  function sortAndDisplayItems(mode = "default") {
+    resultsContainer.innerHTML = "";
+    let sortedItems = [...flatItems];
+
+    if (mode === "recent") {
+      sortedItems.sort((a, b) => {
+        const ta = parseDateValue(a.date);
+        const tb = parseDateValue(b.date);
+        if (isNaN(ta) && isNaN(tb)) return 0;
+        if (isNaN(ta)) return 1; // no date -> later
+        if (isNaN(tb)) return -1;
+        return tb - ta; // newer first
+      });
+    } else if (mode === "old") {
+      sortedItems.sort((a, b) => {
+        const ta = parseDateValue(a.date);
+        const tb = parseDateValue(b.date);
+        if (isNaN(ta) && isNaN(tb)) return 0;
+        if (isNaN(ta)) return 1;
+        if (isNaN(tb)) return -1;
+        return ta - tb; // oldest first
+      });
+    } else if (mode === "long") {
+      sortedItems.sort((a, b) => {
+        const ta = parseDurationToSeconds(a.time);
+        const tb = parseDurationToSeconds(b.time);
+        if (isNaN(ta) && isNaN(tb)) return 0;
+        if (isNaN(ta)) return 1; // no time -> later
+        if (isNaN(tb)) return -1;
+        return tb - ta; // longest first
+      });
+    } else if (mode === "short") {
+      sortedItems.sort((a, b) => {
+        const ta = parseDurationToSeconds(a.time);
+        const tb = parseDurationToSeconds(b.time);
+        if (isNaN(ta) && isNaN(tb)) return 0;
+        if (isNaN(ta)) return 1;
+        if (isNaN(tb)) return -1;
+        return ta - tb; // shortest first
+      });
+    } else if (mode === "popular") {
+      sortedItems = sortedItems.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+    } else if (mode === "random") {
+      sortedItems = sortedItems.sort(() => Math.random() - 0.5);
+    } else {
+      // default: keep original matched order
+    }
+
+    sortedItems.forEach(createPoster);
+  }
+
+  sortAndDisplayItems(); // Initial load
+
+  document.getElementById("sortSelect").addEventListener("change", (e) => {
+    sortAndDisplayItems(e.target.value);
+  });
+
+  // ✅ Now load alternate HTML-style anchors also
+  await fetchAdditionalHtmlAnchors(query, pages);
+})();
+</script>
+
+</body>
+</html>
